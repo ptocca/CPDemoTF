@@ -33,7 +33,9 @@ function draw(data, canvas) {
 
   }
   // ctx.putImageData(imageData, 0, 0);
-  let tempCanvas = new OffscreenCanvas(width,height);
+  let tempCanvas = document.createElement("canvas");
+  tempCanvas.width = 28;
+  tempCanvas.height = 28;
   tempCanvas.getContext('2d').putImageData(imageData,0,0);
   ctx.drawImage(tempCanvas,0,0,width*2,height*2);
 }
