@@ -1,0 +1,206 @@
+<html>
+
+<head>
+  <title>CP TF.js Demo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs/dist/tf.min.js"> </script>
+
+  <style>
+    .tfjs-example-container {
+      display: grid;
+      grid-template-columns: repeat(4, [col] auto);
+      grid-template-rows: repeat(4, [col] auto);
+      background-color: #ccc;
+      width: 100%;
+      font-family: sans-serif;
+      text-align: center;
+
+    }
+
+    .title-area {
+      background-color: #88f;
+      color: #fff;
+      border-radius: 5px;
+      grid-column: col / span 4;
+      grid-row: row 1 ;
+      font-size: 150%;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .status-area {
+      border-radius: 5px;
+      background-color: #eee;
+      grid-column: col 1;
+      grid-row: row 2 ;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .epsilon-slider {
+      background-color: #eee ;
+      grid-column: col 2;
+      grid-row: row 2 ;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    .test-digits {
+      grid-column: col 2;
+      grid-row: row 3 ;
+      background-color: #eee;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .button-area {
+      grid-column: col 1;
+      grid-row: row 3 ;
+      background-color: #eee;
+      box-orient: vertical;
+      box-align: center;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+    input {
+      font-size: 20px;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .stats-area {
+      grid-column: col 3;
+      grid-row: row 3 ;
+      background-color: #eee;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+
+    .doc-area {
+      grid-column: col 4;
+      grid-row: row 2 / span 3 ;
+      background-color: #eee;
+      border: 1px solid grey;
+      padding: 5px;
+      margin: 5px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="tfjs-example-container">
+    <section class='title-area'>
+      <h1>Conformal Prediction Demo using TensorFlow.js</h1>
+    </section>
+      <div class="epsilon-slider">
+        Epsilon: <output id="epsilonOutput" >0.200</output>
+        <input type="range" id="epsilonInput" min="0.00" max="1.00" step="0.005" value="0.200"
+               oninput="epsilonOutput.value=parseFloat(epsilonInput.value).toFixed(3)"
+               style="width:100%">
+      </div>
+      <div class="test-digits" id="images">
+        <table id="test-table" align="center">
+        </table>
+      </div>
+
+      <div class="status-area" id="status">
+        Starting...
+      </div>
+
+      <div class="button-area">
+        <div>
+          <input type="button" id="new-test" value="New test data" onclick="newTestData()">
+        </div>
+        <div>
+          <input type="button" id="train-more" value="Train more" onclick="trainMore()">
+        </div>
+      </div>
+
+      <div class="stats-area">
+        <table id="stats-table" align="center">
+          <th colspan="2">CP Statistics</th>
+          <tr>
+            <td>
+              Error rate
+            </td>
+            <td id="errorRate" align="right">
+            </td>
+          </tr>
+          <tr>
+            <td>Average pred set size
+            </td>
+            <td id="avgPredSetSize" align="right">
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="doc-area" align="left">
+        <h1>
+          Notes
+        </h1>
+        <ol>
+          <li> This page demonstrates Conformal Predictors on the MNIST digit recognition problem.
+            It is a pure JavaScript implementation, so <b>all</b> computation takes place in the browser (rather than on a server).
+          </li>
+          <br>
+          <li> The implementation uses a CNN implemented in Tensorflow JS to recognize the digits
+            (based on the <tt>mnist-core</tt>) example.
+          </li>
+          <br>
+          <li> Upon starting, the demo downloads the MNIST image data and trains (partially) the CNN.
+            A status line below the heading shows the progress of the training.
+          </li>
+          <br>
+          <li> The central area shows a sample of 100 test images.
+            The background is green when the CP prediction is correct, red in case of error
+            (i.e. the prediction set not containing the actual label).
+            The small numbers in yellow at the bottom of each image represent the
+            prediction set.
+          </li>
+          <br>
+          <li> The big slider allows to vary the CP <em>significance level</em> 'epsilon'.
+            The p-values and the prediction sets are recomputed in real-time.<br>
+            One can observe how the error rate shown on the right follows the significance level, within statistical fluctuation.
+            Also, one can see how the prediction sets become larger as the significance level get smaller.
+          </li>
+          <br>
+          <li> The buttons on the left allow the user to
+            <ol>
+              <li> take a different sample from the test set.
+              <li> perform a few more steps in the training of the CNN.
+          </ol>
+          The latter can be used to demonstrate that the effect of the increased
+          accuracy of the ML method underlying the CP.
+          <br>
+          One can see that, by performing more training and therefore increasing (hopefully) the
+          accuracy of the CNN, the prediction sets become smaller. The average prediction set
+          size (where the average is over the sets with at least one element) is
+          shown in the left panel.
+          <li>Technical details: the MNIST dataset used in this demo has 65,000 images.
+            4/6 are used as training set, 1/6 for calibration and 1/6 as test.
+            In fact, because of some limitation in the WebGL backend, the calibration set
+            was restricted to 2,000 examples.
+          </li>
+        </ol>
+
+      </div>
+  </div>
+
+</body>
+
+<script type="text/javascript" src="./CPDemoTF.js">
+</script>
+
+</html>
